@@ -34,7 +34,7 @@ Events can be bound to an object with the `on` function call.  Events can be pas
 
 ## Un-Binding Events (off)
 
-Events and callbacks can be removed with the `off` function call.  Only a single event can be removed at a time (although this might change).  The first argument is the event name or namespace (see namespaces).  An optional second argument is the specific callback to remove.  If no arguments are passed then all events attached to the object are removed.
+Events and callbacks can be removed with the `off` function call.  Only a single event can be removed at a time (although this might change to use a space separated list).  The first argument is the event name or namespace (see namespaces).  An optional second argument is the specific callback to remove.  If no arguments are passed then all events attached to the object are removed.
 
     obj.off('click');  // Removes any click handlers
     obj.off('change', callback) // Removes the function `callback` from the `change` event
@@ -79,7 +79,7 @@ Eventr support namespacing events for modularization.  Namespaces are used in th
     obj.off('.example');
 
     // Trigger again
-    obj.trigger('change');  //  crickets chirping...
+    obj.trigger('change');  // Foo
 
 As you can see we can trigger events regardless of their namespace or within a specific namespace.
 
