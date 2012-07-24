@@ -2,17 +2,18 @@
  * _.Eventr
  * http://wesleytodd.com/
  *
- * Version 0.1
+ * Version 0.1-independant
  *
- * Requires     Underscore
- * 
+ * This version is not dependant on Underscore.  If you are using Underscore please grab the master version:
+ * https://github.com/wesleytodd/_.Eventr
+ *
  * Turn any object into an event server or client.  Provides a simple interface for binding, unbinding and triggering events.
  * Supports namespacing, binding multiple events with single calls and chaining.
  * 
  * Basic Usage:
  * 
  *     var MyObject = function(){...}
- *     _.eventr(MyObject);
+ *     eventr(MyObject);
  *
  *     var obj = new MyObject();
  *     obj.on('event', function(){...});
@@ -21,7 +22,29 @@
  */
  (function(){
 	// Local variables
-	var Eventr, eventr;
+	var Eventr, eventr, each;
+
+	/**
+	 * An implementation of forEach
+	 *
+	 * Coppied directly from Underscore.js
+	 */
+	each = function(obj, iterator, context) {
+		if (obj == null) return;
+		if (nativeForEach && obj.forEach === nativeForEach) {
+			obj.forEach(iterator, context);
+		} else if (obj.length === +obj.length) {
+			for (var i = 0, l = obj.length; i < l; i++) {
+				if (iterator.call(context, obj[i], i, obj) === {}) return;
+			}
+		} else {
+			for (var key in obj) {
+				if (hasOwnProperty.call(obj, key)) {
+					if (iterator.call(context, obj[key], key, obj) === {}) return;
+				}
+			}
+		}
+	};
 
 	Eventr = {
 		/**
@@ -62,27 +85,27 @@
 		 */
 		on : function(event, callback/*, context*/){
 			// Don't allow callback to be undefined if event is not a hash object
-			if(!_.isObject(event) && !_.isFunction(callback)) return this;
+			if(typeof event != 'object' && typeof callback != 'function') return this;
 			
 			// Set up this reference for inside the loops
 			var base = this;
 
 			// Recursive if passed in a hash of events or a string of more than one event
-			if(_.isObject(event)){
+			if(typeof event == 'object'){
 
 				// Loop through the hash and add each individually
-				_.each(event, function(f, e){
+				each(event, function(f, e){
 					base.on(e, f/*, context*/);
 				});
 
-			} else if(_.isString(event)){
+			} else if(typeof event == 'string')){
 
 				// A space separated list of events can be passed in, so check for that and recurse
 				event = event.split(/\s+/);
 				if(event.length > 1){
 
 					// Loop through events and add each individually
-					_.each(event, function(e){
+					each(event, function(e){
 						base.on(e, callback/*, context*/);
 					});
 
@@ -124,7 +147,7 @@
 			var base = this;
 
 			// Remove all events on this object
-			if(_.isUndefined(event)){
+			if(typeof event == 'undefined'){
 				delete base._events;
 				return base;
 			}
@@ -135,20 +158,20 @@
 				// If an exact match is found just process that set
 				if(base._events[event]){
 					// If the event exists and no callback was specified, remove all callbacks for that event
-					if(_.isUndefined(callback)){
+					if(typeof callback == 'undefined'){
 						delete base._events[event];
 						return base;
 					}
 
 					// Loop through the events callbacks and remove if equal
-					_.each(base._events[event], function(fnc){
-						if(_.isEqual(fnc, callback)){
+					each(base._events[event], function(fnc){
+						if(fnc == callback){
 							base._events[event].splice(base._events[event].indexOf(fnc), 1);
 						}
 					});
 
 					// If this event is now empty, remove it
-					if(_.isEmpty(base._events[event])) delete base._events[event];
+					if(base._events[event].length == 0) delete base._events[event];
 					return base;
 				}
 
@@ -157,19 +180,19 @@
 				var namespace = event.match(/\.([^.]+)$/g);
 
 				// Loop through the events and see if it matches the namespace
-				_.each(base._events, function(fs, e){
+				each(base._events, function(fs, e){
 					match = e.indexOf(namespace);
 					if(match != -1){
 
 						// It matches the name space and a callback was not specified, remove all events for namespace
-						if(_.isUndefined(callback)){
+						if(typeof callback == 'undefined'){
 							delete base._events[e]
 							return base;
 						}
 
 						// A callback was defined, so loop through the functions and test for equality
-						_.each(fs, function(f){
-							if(_.isEqual(f, callback)){
+						each(fs, function(f){
+							if(f = callback){
 								base.off(e, callback);
 							}
 						});
@@ -202,19 +225,19 @@
 			var base = this;
 
 			// Make sure that event and events hash exist before continuing
-			if(_.isUndefined(event) || _.isUndefined(base._events)) return base;
+			if(typeof event == 'undefined' || typeof base._events == 'undefined') return base;
 
 			// If the full event string exists, call it
-			if(!_.isUndefined(base._events[event])){
+			if(base._events[event] != 'undefined'){
 
-				_.each(base._events[event], function(f){
+				each(base._events[event], function(f){
 					f.apply(base, Array.prototype.slice.call(arguments, 1));
 				});
 
 			} else {
 				
 				// Otherwise it might be a namespaced event.  Loop events to test
-				_.each(base._events, function(fs, e){
+				each(base._events, function(fs, e){
 
 					// Get the first part of the event name (ex. 'change.eventr' yields 'change')
 					var match = e.match(/^([^.]+)/g);
@@ -236,8 +259,8 @@
 	/**
 	 * Extend object from Eventr
 	 */
-	eventr = function(obj, map){
-		if(!_.isUndefined(map)){
+	window.eventr = function(obj, map){
+		if(typeof map != 'undefined'){
 			Eventr[map.on] = Eventr.on;
 			Eventr[map.off] = Eventr.off;
 			Eventr[map.trigger] = Eventr.trigger;
@@ -245,14 +268,12 @@
 			delete Eventr.off;
 			delete Eventr.trigger;
 		}
-		return _.extend(obj.prototype, Eventr);
+		each(slice.call(arguments, 1), function(source) {
+			for (var prop in source) {
+				obj[prop] = source[prop];
+			}
+		});
+		return obj;
 	};
-
-	/**
-	 * Add Eventr to the underscore object
-	 */
-	_.mixin({
-		eventr : eventr
-	});
 
 })();
