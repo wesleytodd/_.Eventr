@@ -2,7 +2,7 @@
  * _.Eventr
  * http://wesleytodd.com/
  *
- * Version 0.1-independant
+ * Version 0.2-independant
  *
  * This version is not dependant on Underscore.  If you are using Underscore please grab the master version:
  * https://github.com/wesleytodd/_.Eventr
@@ -31,7 +31,7 @@
 	 */
 	each = function(obj, iterator, context) {
 		if (obj == null) return;
-		if (nativeForEach && obj.forEach === nativeForEach) {
+		if (Array.prototype.forEach && obj.forEach === Array.prototype.forEach) {
 			obj.forEach(iterator, context);
 		} else if (obj.length === +obj.length) {
 			for (var i = 0, l = obj.length; i < l; i++) {
@@ -98,7 +98,7 @@
 					base.on(e, f/*, context*/);
 				});
 
-			} else if(typeof event == 'string')){
+			} else if(typeof event == 'string'){
 
 				// A space separated list of events can be passed in, so check for that and recurse
 				event = event.split(/\s+/);
@@ -221,34 +221,38 @@
 		 */
 		trigger : function(event){
 
-			// Setup this for inside loops
-			var base = this;
+			// Setup this and arguments for inside loops
+			var base = this,
+				args = Array.prototype.slice.call(arguments, 1);
 
 			// Make sure that event and events hash exist before continuing
 			if(typeof event == 'undefined' || typeof base._events == 'undefined') return base;
+			
+			if(event.indexOf('.') !== -1 && typeof base._events[event] != 'undefined'){
 
-			// If the full event string exists, call it
-			if(base._events[event] != 'undefined'){
-
+				// Loop through events and call the callbacks
 				each(base._events[event], function(f){
-					f.apply(base, Array.prototype.slice.call(arguments, 1));
-				});
-
-			} else {
-				
-				// Otherwise it might be a namespaced event.  Loop events to test
-				each(base._events, function(fs, e){
-
-					// Get the first part of the event name (ex. 'change.eventr' yields 'change')
-					var match = e.match(/^([^.]+)/g);
-
-					// If a match was found and that match equals the event name, call trigger with the fully qualified name
-					if(match.length == 1 && match[0] == event){
-						base.trigger(e, Array.prototype.slice.call(arguments, 1));
-					}
+					f.apply(base, args);
 				});
 
 			}
+
+			// If an exact namespaced match was not found, loop all events
+			each(base._events, function(f,e){
+
+				// Match event names without namespaces
+				var match = e.match(/^([^.]+)/g);
+
+				// Test that event name matches
+				if(match && match[0] == event){
+
+					// Loop through events and call the callbacks
+					each(base._events[e], function(f){
+						f.apply(base, args);
+					});
+
+				}
+			});
 
 			return base;
 
@@ -268,11 +272,9 @@
 			delete Eventr.off;
 			delete Eventr.trigger;
 		}
-		each(slice.call(arguments, 1), function(source) {
-			for (var prop in source) {
-				obj[prop] = source[prop];
-			}
-		});
+		for (var prop in Eventr) {
+			obj.prototype[prop] = Eventr[prop];
+		}
 		return obj;
 	};
 
