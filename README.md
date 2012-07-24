@@ -2,8 +2,8 @@
 
 A Javascript and Underscore event client/server implementation.
 
-*Note*
-This is a dependency free version of this library.  The main and recommended implementation is dependent on [Underscore.js](http://documentcloud.github.com/underscore/).  If you are interested in that version of the library, it can be found [here](https://github.com/wesleytodd/_.Eventr).
+*Note*: This is a dependency free version of this library.  The main and recommended implementation is dependent on [Underscore.js](http://documentcloud.github.com/underscore/).  If you are interested in that version of the library, it can be found [here](https://github.com/wesleytodd/_.Eventr).
+
 Eventr can turn any object into an event machine.  Emitting or listening for, subscribing or publishing, all it takes is:
 
     var Obj = function(){};
