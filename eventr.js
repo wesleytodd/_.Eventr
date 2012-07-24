@@ -2,7 +2,7 @@
  * _.Eventr
  * http://wesleytodd.com/
  *
- * Version 0.1
+ * Version 0.2
  *
  * Requires     Underscore
  * 
@@ -198,34 +198,38 @@
 		 */
 		trigger : function(event){
 
-			// Setup this for inside loops
-			var base = this;
+			// Setup this and arguments for inside loops
+			var base = this,
+				args = Array.prototype.slice.call(arguments, 1);
 
 			// Make sure that event and events hash exist before continuing
 			if(_.isUndefined(event) || _.isUndefined(base._events)) return base;
 
-			// If the full event string exists, call it
-			if(!_.isUndefined(base._events[event])){
-
-				_.each(base._events[event], function(f){
-					f.apply(base, Array.prototype.slice.call(arguments, 1));
-				});
-
-			} else {
+			if(event.indexOf('.') !== -1 && !_.isUndefined(base._events[event])){
 				
-				// Otherwise it might be a namespaced event.  Loop events to test
-				_.each(base._events, function(fs, e){
-
-					// Get the first part of the event name (ex. 'change.eventr' yields 'change')
-					var match = e.match(/^([^.]+)/g);
-
-					// If a match was found and that match equals the event name, call trigger with the fully qualified name
-					if(match.length == 1 && match[0] == event){
-						base.trigger(e, Array.prototype.slice.call(arguments, 1));
-					}
+				// Loop through events and call the callbacks
+				_.each(base._events[event], function(f){
+					f.apply(base, args);
 				});
 
 			}
+
+			// If an exact namespaced match was not found, loop all events
+			_.each(base._events, function(f,e){
+
+				// Match event names without namespaces
+				var match = e.match(/^([^.]+)/g);
+
+				// Test that event name matches
+				if(match && match[0] == event){
+
+					// Loop through events and call the callbacks
+					_.each(base._events[e], function(f){
+						f.apply(base, args);
+					});
+
+				}
+			});
 
 			return base;
 
