@@ -18,7 +18,7 @@ After this your Object has all of the necessary methods for emitting and listeni
         trigger : 'emit'
     });
 
-After this your functions will not be mapped to `on`, `off` and `trigger`, but to `bind`, `unbind` and `emit`.
+After this your functions will not be mapped to `on`, `off` and `trigger`, but to `bind`, `unbind` and `emit`.  The third and optional argument is whether the function map is to be applied globally.  This defaults to true.
 
 ## Binding Events (on)
 

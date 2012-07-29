@@ -2,7 +2,7 @@
  * _.Eventr
  * http://wesleytodd.com/
  *
- * Version 0.2
+ * Version 0.3
  *
  * Requires     Underscore
  * 
@@ -20,243 +20,255 @@
  *
  */
  (function(){
-	// Local variables
-	var Eventr, eventr;
+    // Local variables
+    var Eventr, eventr;
 
-	Eventr = {
-		/**
-		 * Eventr.on()
-		 *
-		 * Bind an event to the object.
-		 *
-		 * @param object|string event This can be either an event name string or a hash of events and callback functions
-		 * @param function callback A callback function to be called when the event is triggered
-		 *
-		 * This function supports adding multiple events in the form of an event hash:
-		 *
-		 *     Eventr.on({
-		 *         'change' : function(){...},
-		 *         'custom' : function(){...}
-		 *     });
-		 *
-		 * Or you can add a single event:
-		 *
-		 *     Eventr.on('change', function(){...});
-		 *
-		 * You can also use namespacing in the form of 'event.namespace':
-		 *
-		 *     Eventr.on('change.eventr', function(){...});
-		 *
-		 * Only single namespaces are valid. (good: 'change.ns', bad: 'change.ns.ns2')
-		 *
-		 * If multiple event share the same callback function you can specify them all at once:
-		 *
-		 *     Eventr.on('change keyup update', function(){...});
-		 *
-		 * @TODO Add context specification so that callbacks can specify 'this'.
-		 * The issue I was having with this is that when someone calls .off() with a
-		 * specific callback function you cannot test for equality.  I was thinking 
-		 * about adding a reference to the original function to the prototype.  But 
-		 * my first attempt failed...
-		 * 
-		 */
-		on : function(event, callback/*, context*/){
-			// Don't allow callback to be undefined if event is not a hash object
-			if(!_.isObject(event) && !_.isFunction(callback)) return this;
-			
-			// Set up this reference for inside the loops
-			var base = this;
+    Eventr = {
+        /**
+         * Eventr.on()
+         *
+         * Bind an event to the object.
+         *
+         * @param object|string event This can be either an event name string or a hash of events and callback functions
+         * @param function callback A callback function to be called when the event is triggered
+         *
+         * This function supports adding multiple events in the form of an event hash:
+         *
+         *     Eventr.on({
+         *         'change' : function(){...},
+         *         'custom' : function(){...}
+         *     });
+         *
+         * Or you can add a single event:
+         *
+         *     Eventr.on('change', function(){...});
+         *
+         * You can also use namespacing in the form of 'event.namespace':
+         *
+         *     Eventr.on('change.eventr', function(){...});
+         *
+         * Only single namespaces are valid. (good: 'change.ns', bad: 'change.ns.ns2')
+         *
+         * If multiple event share the same callback function you can specify them all at once:
+         *
+         *     Eventr.on('change keyup update', function(){...});
+         *
+         * @TODO Add context specification so that callbacks can specify 'this'.
+         * The issue I was having with this is that when someone calls .off() with a
+         * specific callback function you cannot test for equality.  I was thinking 
+         * about adding a reference to the original function to the prototype.  But 
+         * my first attempt failed...
+         * 
+         */
+        on : function(event, callback/*, context*/){
+            // Don't allow callback to be undefined if event is not a hash object
+            if(!_.isObject(event) && !_.isFunction(callback)) return this;
+            
+            // Set up this reference for inside the loops
+            var base = this;
 
-			// Recursive if passed in a hash of events or a string of more than one event
-			if(_.isObject(event)){
+            // Recursive if passed in a hash of events or a string of more than one event
+            if(_.isObject(event)){
 
-				// Loop through the hash and add each individually
-				_.each(event, function(f, e){
-					base.on(e, f/*, context*/);
-				});
+                // Loop through the hash and add each individually
+                _.each(event, function(f, e){
+                    base.on(e, f/*, context*/);
+                });
 
-			} else if(_.isString(event)){
+            } else if(_.isString(event)){
 
-				// A space separated list of events can be passed in, so check for that and recurse
-				event = event.split(/\s+/);
-				if(event.length > 1){
+                // A space separated list of events can be passed in, so check for that and recurse
+                event = event.split(/\s+/);
+                if(event.length > 1){
 
-					// Loop through events and add each individually
-					_.each(event, function(e){
-						base.on(e, callback/*, context*/);
-					});
+                    // Loop through events and add each individually
+                    _.each(event, function(e){
+                        base.on(e, callback/*, context*/);
+                    });
 
-				} else {
+                } else {
 
-					//Actually add the event...finally
-					event = event[0];
-					//context = context || base;
-					base._events = base._events || {};
-					base._events[event] = base._events[event] || [];
-					base._events[event].push(callback);
+                    //Actually add the event...finally
+                    event = event[0];
+                    //context = context || base;
+                    base._events = base._events || {};
+                    base._events[event] = base._events[event] || [];
+                    base._events[event].push(callback);
 
-				}
-			}
-			return base;
-		}, // End Eventr.on()
+                }
+            }
+            return base;
+        }, // End Eventr.on()
 
-		/**
-		 * Eventr.off()
-		 * 
-		 * Unbind events and their callbacks
-		 *
-		 * @param string event An event name or namespace.  Only single namespaces are supported (ex. 'change.eventr' or '.eventr', not 'change.eventr.other')
-		 * @param function callback Optional. A specific callback function to be removed from the event or namespace
-		 *
-		 * This function can be called in three ways:
-		 *  - No arguments                    : will remove all events from the object
-		 *  - One argument (event)            : will remove all events on the object for that event string or namespace
-		 *  - Two arguments (event, callback) : will only remove a callback if the event name or namespace and callback function pass an equality test
-		 *
-		 *  When removing events you can use just a namespace if you want to remove a set of events:
-		 *
-		 *      Eventr.off('.namespace');
-		 *
-		 *  After the event callback is removed it checks to see if that event is now empty of callbacks and will remove it if it is.
-		 */
-		off : function(event, callback){
-			// Setup this for inside loops
-			var base = this;
+        /**
+         * Eventr.off()
+         * 
+         * Unbind events and their callbacks
+         *
+         * @param string event An event name or namespace.  Only single namespaces are supported (ex. 'change.eventr' or '.eventr', not 'change.eventr.other')
+         * @param function callback Optional. A specific callback function to be removed from the event or namespace
+         *
+         * This function can be called in three ways:
+         *  - No arguments                    : will remove all events from the object
+         *  - One argument (event)            : will remove all events on the object for that event string or namespace
+         *  - Two arguments (event, callback) : will only remove a callback if the event name or namespace and callback function pass an equality test
+         *
+         *  When removing events you can use just a namespace if you want to remove a set of events:
+         *
+         *      Eventr.off('.namespace');
+         *
+         *  After the event callback is removed it checks to see if that event is now empty of callbacks and will remove it if it is.
+         */
+        off : function(event, callback){
+            // Setup this for inside loops
+            var base = this;
 
-			// Remove all events on this object
-			if(_.isUndefined(event)){
-				delete base._events;
-				return base;
-			}
+            // Remove all events on this object
+            if(_.isUndefined(event)){
+                delete base._events;
+                return base;
+            }
 
-			// If callback is undefined then remove all the registered callbacks for that event, otherwise loop and remove only the callback
-			if(event && base._events){
+            // If callback is undefined then remove all the registered callbacks for that event, otherwise loop and remove only the callback
+            if(event && base._events){
 
-				// If an exact match is found just process that set
-				if(base._events[event]){
-					// If the event exists and no callback was specified, remove all callbacks for that event
-					if(_.isUndefined(callback)){
-						delete base._events[event];
-						return base;
-					}
+                // If an exact match is found just process that set
+                if(base._events[event]){
+                    // If the event exists and no callback was specified, remove all callbacks for that event
+                    if(_.isUndefined(callback)){
+                        delete base._events[event];
+                        return base;
+                    }
 
-					// Loop through the events callbacks and remove if equal
-					_.each(base._events[event], function(fnc){
-						if(_.isEqual(fnc, callback)){
-							base._events[event].splice(base._events[event].indexOf(fnc), 1);
-						}
-					});
+                    // Loop through the events callbacks and remove if equal
+                    _.each(base._events[event], function(fnc){
+                        if(_.isEqual(fnc, callback)){
+                            base._events[event].splice(base._events[event].indexOf(fnc), 1);
+                        }
+                    });
 
-					// If this event is now empty, remove it
-					if(_.isEmpty(base._events[event])) delete base._events[event];
-					return base;
-				}
+                    // If this event is now empty, remove it
+                    if(_.isEmpty(base._events[event])) delete base._events[event];
+                    return base;
+                }
 
-				// If it has gotten to this point, the event is either a namespace or invalid
-				// So try and get the namespace
-				var namespace = event.match(/\.([^.]+)$/g);
+                // If it has gotten to this point, the event is either a namespace or invalid
+                // So try and get the namespace
+                var namespace = event.match(/\.([^.]+)$/g);
 
-				// Loop through the events and see if it matches the namespace
-				_.each(base._events, function(fs, e){
-					match = e.indexOf(namespace);
-					if(match != -1){
+                // Loop through the events and see if it matches the namespace
+                _.each(base._events, function(fs, e){
+                    match = e.indexOf(namespace);
+                    if(match != -1){
 
-						// It matches the name space and a callback was not specified, remove all events for namespace
-						if(_.isUndefined(callback)){
-							delete base._events[e]
-							return base;
-						}
+                        // It matches the name space and a callback was not specified, remove all events for namespace
+                        if(_.isUndefined(callback)){
+                            delete base._events[e]
+                            return base;
+                        }
 
-						// A callback was defined, so loop through the functions and test for equality
-						_.each(fs, function(f){
-							if(_.isEqual(f, callback)){
-								base.off(e, callback);
-							}
-						});
-					}
-				});
-			}
+                        // A callback was defined, so loop through the functions and test for equality
+                        _.each(fs, function(f){
+                            if(_.isEqual(f, callback)){
+                                base.off(e, callback);
+                            }
+                        });
+                    }
+                });
+            }
 
-			return base;
+            return base;
 
-		}, // End Eventr.off()
+        }, // End Eventr.off()
 
-		/**
-		 * Eventr.trigger()
-		 *
-		 * Triggers an event on this object
-		 *
-		 * @param string event An event name to trigger.
-		 *
-		 * Triggers an event and calls all the registered callbacks matching that
-		 * event name.  All arguments after the event name are passed into the 
-		 * event callbacks
-		 *
-		 * @TODO This needs to trigger the callbacks with context supported.
-		 * Currently it just supplies the current object as the context (this)
-		 *
-		 */
-		trigger : function(event){
+        /**
+         * Eventr.trigger()
+         *
+         * Triggers an event on this object
+         *
+         * @param string event An event name to trigger.
+         *
+         * Triggers an event and calls all the registered callbacks matching that
+         * event name.  All arguments after the event name are passed into the 
+         * event callbacks
+         *
+         * @TODO This needs to trigger the callbacks with context supported.
+         * Currently it just supplies the current object as the context (this)
+         *
+         */
+        trigger : function(event){
 
-			// Setup this and arguments for inside loops
-			var base = this,
-				args = Array.prototype.slice.call(arguments, 1);
+            // Setup this and arguments for inside loops
+            var base = this,
+                args = Array.prototype.slice.call(arguments, 1);
 
-			// Make sure that event and events hash exist before continuing
-			if(_.isUndefined(event) || _.isUndefined(base._events)) return base;
+            // Make sure that event and events hash exist before continuing
+            if(_.isUndefined(event) || _.isUndefined(base._events)) return base;
 
-			if(event.indexOf('.') !== -1 && !_.isUndefined(base._events[event])){
-				
-				// Loop through events and call the callbacks
-				_.each(base._events[event], function(f){
-					f.apply(base, args);
-				});
+            if(event.indexOf('.') !== -1 && !_.isUndefined(base._events[event])){
+                
+                // Loop through events and call the callbacks
+                _.each(base._events[event], function(f){
+                    f.apply(base, args);
+                });
 
-			}
+            }
 
-			// If an exact namespaced match was not found, loop all events
-			_.each(base._events, function(f,e){
+            // If an exact namespaced match was not found, loop all events
+            _.each(base._events, function(f,e){
 
-				// Match event names without namespaces
-				var match = e.match(/^([^.]+)/g);
+                // Match event names without namespaces
+                var match = e.match(/^([^.]+)/g);
 
-				// Test that event name matches
-				if(match && match[0] == event){
+                // Test that event name matches
+                if(match && match[0] == event){
 
-					// Loop through events and call the callbacks
-					_.each(base._events[e], function(f){
-						f.apply(base, args);
-					});
+                    // Loop through events and call the callbacks
+                    _.each(base._events[e], function(f){
+                        f.apply(base, args);
+                    });
 
-				}
-			});
+                }
+            });
 
-			return base;
+            return base;
 
-		} // End Eventr.trigger()
+        } // End Eventr.trigger()
 
-	} // End Eventr
+    } // End Eventr
 
-	/**
-	 * Extend object from Eventr
-	 */
-	eventr = function(obj, map){
-		if(!_.isUndefined(map)){
-			Eventr[map.on] = Eventr.on;
-			Eventr[map.off] = Eventr.off;
-			Eventr[map.trigger] = Eventr.trigger;
-			delete Eventr.on;
-			delete Eventr.off;
-			delete Eventr.trigger;
-		}
-		return _.extend(obj.prototype, Eventr);
-	};
+    /**
+     * Extend object from Eventr
+     * 
+     * @param object obj The object to add the events functions to
+     * @param object map (optional) A hash of new function names to the existing functions
+     * @param bool global (optional) If true, the map passed in will be applied globally
+     * 
+     * Extends the object passed in with the Eventr functions.  If a map of events is passed
+     * in it will be used to assign the function names on the object.  If global is true,
+     * all calls to this function after will use the original mapping.
+     */
+    eventr = function(obj, map, global){
+        var cEventr = _.clone(Eventr);
+        if(!_.isUndefined(map)){
+            cEventr[map.on] = Eventr.on;
+            cEventr[map.off] = Eventr.off;
+            cEventr[map.trigger] = Eventr.trigger;
+            delete cEventr.on;
+            delete cEventr.off;
+            delete cEventr.trigger;
+            if(_.isUndefined(global) || global == true){
+                Eventr = cEventr;
+            }
+        }
+        return _.extend(obj.prototype, cEventr);
+    };
 
-	/**
-	 * Add Eventr to the underscore object
-	 */
-	_.mixin({
-		eventr : eventr
-	});
+    /**
+     * Add Eventr to the underscore object
+     */
+    _.mixin({
+        eventr : eventr
+    });
 
 })();
