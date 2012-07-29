@@ -2,7 +2,7 @@
  * _.Eventr
  * http://wesleytodd.com/
  *
- * Version 0.2-independant
+ * Version 0.3-independant
  *
  * This version is not dependant on Underscore.  If you are using Underscore please grab the master version:
  * https://github.com/wesleytodd/_.Eventr
@@ -260,20 +260,35 @@
 
 	} // End Eventr
 
-	/**
-	 * Extend object from Eventr
-	 */
-	window.eventr = function(obj, map){
-		if(typeof map != 'undefined'){
-			Eventr[map.on] = Eventr.on;
-			Eventr[map.off] = Eventr.off;
-			Eventr[map.trigger] = Eventr.trigger;
-			delete Eventr.on;
-			delete Eventr.off;
-			delete Eventr.trigger;
-		}
+    /**
+     * Extend object from Eventr
+     * 
+     * @param object obj The object to add the events functions to
+     * @param object map (optional) A hash of new function names to the existing functions
+     * @param bool global (optional) If true, the map passed in will be applied globally
+     * 
+     * Extends the object passed in with the Eventr functions.  If a map of events is passed
+     * in it will be used to assign the function names on the object.  If global is true,
+     * all calls to this function after will use the original mapping.
+     */
+	window.eventr = function(obj, map, global){
+        var cEventr = {};
 		for (var prop in Eventr) {
-			obj.prototype[prop] = Eventr[prop];
+			cEventr[prop] = Eventr[prop];
+		}
+		if(typeof map != 'undefined'){
+			cEventr[map.on] = Eventr.on;
+			cEventr[map.off] = Eventr.off;
+			cEventr[map.trigger] = Eventr.trigger;
+			delete cEventr.on;
+			delete cEventr.off;
+			delete cEventr.trigger;
+            if(typeof global == 'undefined' || global == true){
+                Eventr = cEventr;
+            }
+		}
+		for (var prop in cEventr) {
+			obj.prototype[prop] = cEventr[prop];
 		}
 		return obj;
 	};

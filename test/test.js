@@ -89,4 +89,46 @@
 	//Test 12
 	console.log('Test 12:', typeof obj._events == 'undefined');
 
+	var Obj2 = function(){};
+	eventr(Obj2, {
+        on      : 'bind',
+        off     : 'unbind',
+        trigger : 'emit'
+    }, false);
+	var obj2 = new Obj2();
+
+    //Test 13
+    console.log('Test 13:', typeof obj2.bind != 'undefined');
+
+    //Test 14
+    console.log('Test 14:', typeof obj2.on == 'undefined');
+
+	var Obj3 = function(){};
+	eventr(Obj3);
+	var obj3 = new Obj3();
+   
+   //Test 15
+   console.log('Test 15:', typeof obj3.off != 'undefined')
+
+   //Test 16
+   console.log('Test 16:', typeof obj3.unbind == 'undefined')
+
+	var Obj4 = function(){};
+	eventr(Obj4, {
+        on      : 'bind',
+        off     : 'unbind',
+        trigger : 'other'
+    }, true);
+	var obj4 = new Obj4();
+
+	var Obj5 = function(){};
+	eventr(Obj5);
+	var obj5 = new Obj5();
+
+    //Test 17
+    console.log('Test 17:', typeof obj5.other != 'undefined');
+
+    //Test 18
+    console.log('Test 18:', typeof obj5.trigger == 'undefined');
+
 })();
