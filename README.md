@@ -86,3 +86,7 @@ As you can see we can trigger events regardless of their namespace or within a s
 ## Why another event library?
 
 Because I felt like it.  More importantly all the other event libraries I found either used function names I don't like, or didn't support the features I wanted.  This implementation takes most of the stuff I like from [MicroEvent.js](https://github.com/jeromeetienne/microevent.js), [Smoke Signals](https://github.com/bentomas/smokesignals) and [Backbone](https://github.com/documentcloud/backbone) and adds some features I wanted.
+
+## Other Versions
+
+[Independent](https://github.com/wesleytodd/_.Eventr/tree/independent) - A version that is not dependant on underscore.js
