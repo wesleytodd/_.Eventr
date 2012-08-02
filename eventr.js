@@ -21,7 +21,15 @@
  */
  (function(){
     // Local variables
-    var Eventr, eventr;
+    var Eventr, 
+		eventr,
+		base = this,
+		_ = base._;
+
+	/**
+	 * Support for Node.js require to include _
+	 */
+	if (!_ && (typeof require !== 'undefined')) _ = require('underscore');
 
     Eventr = {
         /**
@@ -261,14 +269,26 @@
                 Eventr = cEventr;
             }
         }
-        return _.extend(obj.prototype, cEventr);
+        _.extend(obj.prototype || obj, cEventr);
+		return obj;
     };
 
-    /**
-     * Add Eventr to the underscore object
-     */
-    _.mixin({
-        eventr : eventr
-    });
-
-})();
+	/**
+	 * Support For Node.js exports
+	 * Taken from the implementation in Underscore.js
+	 */
+	if (typeof exports !== 'undefined') {
+		if (typeof module !== 'undefined' && module.exports) {
+			exports = module.exports = eventr;
+		}
+		exports.eventr = eventr;
+	} else {
+		/**
+		 * Add Eventr to the underscore object if in the browser
+		 */
+		_.mixin({
+			eventr : eventr
+		});
+	}
+    
+}).call(this);
