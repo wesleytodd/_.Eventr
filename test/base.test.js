@@ -1,5 +1,7 @@
-var eventr = require('../eventr.js'),
-	should = require('should');
+var eventr = process.env.EVENTR_COV
+	? require('./coverage/eventr.js')
+	: require('../eventr.js')
+;
 
 describe('Eventr', function(){
 	it('should extend an object constructors prototype', function(){
